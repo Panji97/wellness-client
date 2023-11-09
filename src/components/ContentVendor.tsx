@@ -1,14 +1,27 @@
+import { toast } from 'react-toastify'
+import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { showEvent } from '../service/eventApi'
-import { useEffect } from 'react'
+
+import { EVENT_PROPS, editEvent, showEvent } from '../service/eventApi'
 import { setEvent } from '../store/eventSlice'
 
 const ContentVendor = () => {
   const dispatch = useDispatch()
+  const [formData, setFormData] = useState<EVENT_PROPS>({})
+  const [isModalOpen, setModalOpen] = useState(false)
+  const [isEventDateVisible, setEventDateVisible] = useState(false)
+  const [isEventReasonVisible, setEventReasonVisible] = useState(false)
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    })
+  }
 
   const eventData = useSelector((state: any) => state.event.data)
 
-  const handleShow = async () => {
+  const handleShowData = async () => {
     try {
       const response = await showEvent()
 
@@ -19,8 +32,48 @@ const ContentVendor = () => {
   }
 
   useEffect(() => {
-    handleShow()
-  }, [])
+    handleShowData()
+  }, [dispatch])
+
+  const handleAccept = () => {
+    setEventDateVisible(true)
+    // You can add logic here to save the Event Date
+  }
+
+  const handleReject = () => {
+    setEventReasonVisible(true)
+    // You can add logic here to save the Event Reason
+  }
+
+  const handleCloseModal = () => {
+    setEventDateVisible(false) // Menutup tampilan tanggal (jika terbuka)
+    setEventReasonVisible(false) // Menutup tampilan alasan (jika terbuka)
+    setModalOpen(false) // Menutup modal
+  }
+
+  const handleEditData = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    const response = await editEvent(formData)
+
+    if (response.result === null) {
+      await handleShowData()
+
+      setFormData({})
+
+      setModalOpen(false)
+
+      toast.success(response.message)
+
+      const modalBackdrop = document.querySelector('.modal-backdrop')
+      if (modalBackdrop) {
+        modalBackdrop.remove()
+      }
+    } else {
+      toast.error(response.message)
+    }
+  }
+
   return (
     <>
       {/* Page Content */}
@@ -40,34 +93,6 @@ const ContentVendor = () => {
           </div>
         </div>
         {/* /Page Header */}
-        {/* Event Statistics */}
-        <div className="row">
-          <div className="col-md-3">
-            <div className="stats-info">
-              <h6>Annual Event</h6>
-              <h4>12</h4>
-            </div>
-          </div>
-          <div className="col-md-3">
-            <div className="stats-info">
-              <h6>Medical Event</h6>
-              <h4>3</h4>
-            </div>
-          </div>
-          <div className="col-md-3">
-            <div className="stats-info">
-              <h6>Other Event</h6>
-              <h4>4</h4>
-            </div>
-          </div>
-          <div className="col-md-3">
-            <div className="stats-info">
-              <h6>Remaining Event</h6>
-              <h4>5</h4>
-            </div>
-          </div>
-        </div>
-        {/* /Event Statistics */}
         <div className="row">
           <div className="col-md-12">
             <div className="table-responsive">
@@ -77,10 +102,8 @@ const ContentVendor = () => {
                     <th>Event Name</th>
                     <th>Company</th>
                     <th>Vendor</th>
-                    <th>Tag</th>
                     <th>Date</th>
                     <th className="text-center">Status</th>
-                    <th>Created</th>
                     <th className="text-right">Actions</th>
                   </tr>
                 </thead>
@@ -90,40 +113,33 @@ const ContentVendor = () => {
                       <tr key={index}>
                         <td>{data.name}</td>
                         <td>{data.company}</td>
+                        <td>{data.vendor}</td>
                         <td className="dropdown action-label">
-                          <a
-                            className="btn btn-white btn-sm btn-rounded dropdown-toggle"
-                            href="#"
-                            data-toggle="dropdown"
-                            aria-expanded="false"
-                          >
-                            {data.vendor[0]}
-                          </a>
-                          <div className="dropdown-menu dropdown-menu-right">
-                            {data.vendor.map((vendor: any, index: any) => (
-                              <span className="dropdown-item" key={index}>
-                                {vendor}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td>{data.tag}</td>
-                        <td className="dropdown action-label">
-                          <a
-                            className="btn btn-white btn-sm btn-rounded dropdown-toggle"
-                            href="#"
-                            data-toggle="dropdown"
-                            aria-expanded="false"
-                          >
-                            {data.date[0]}
-                          </a>
-                          <div className="dropdown-menu dropdown-menu-right">
-                            {data.date.map((date: any, index: any) => (
-                              <span className="dropdown-item" key={index}>
-                                {date}
-                              </span>
-                            ))}
-                          </div>
+                          {data.status === null ? (
+                            <>
+                              <a
+                                className="btn btn-white btn-sm btn-rounded dropdown-toggle"
+                                href="#"
+                                data-toggle="dropdown"
+                                aria-expanded="false"
+                              >
+                                {data.date[0]}
+                              </a>
+                              <div className="dropdown-menu dropdown-menu-right">
+                                {data.date.map((date: any, index: any) => (
+                                  <span className="dropdown-item" key={index}>
+                                    {date}
+                                  </span>
+                                ))}
+                              </div>
+                            </>
+                          ) : data.status === 'approve' ? (
+                            data.date
+                          ) : data.status === 'reject' ? (
+                            'rejected'
+                          ) : (
+                            ''
+                          )}
                         </td>
                         <td className="text-center">
                           <div className="action-label">
@@ -143,20 +159,26 @@ const ContentVendor = () => {
                             </a>
                           </div>
                         </td>
-                        <td>
-                          <h2 className="table-avatar">{data.created}</h2>
-                        </td>
                         <td className="text-right">
                           <div className="dropdown dropdown-action">
                             <a href="#" className="action-icon dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                               <i className="material-icons">more_vert</i>
                             </a>
                             <div className="dropdown-menu dropdown-menu-right">
-                              <a className="dropdown-item" href="#" data-toggle="modal" data-target="#edit_Event">
-                                <i className="fa fa-pencil m-r-5" /> Edit
-                              </a>
-                              <a className="dropdown-item" href="#" data-toggle="modal" data-target="#delete_approve">
-                                <i className="fa fa-trash-o m-r-5" /> Delete
+                              <a
+                                className="dropdown-item"
+                                href="#"
+                                data-toggle="modal"
+                                data-target="#view_Event"
+                                onClick={() => {
+                                  const selectData = eventData.find((d: any) => {
+                                    return d.id === data.id
+                                  })
+                                  setFormData(selectData)
+                                  setModalOpen(true)
+                                }}
+                              >
+                                <i className="fa fa-pencil m-r-5" /> View
                               </a>
                             </div>
                           </div>
@@ -173,162 +195,94 @@ const ContentVendor = () => {
         </div>
       </div>
       {/* /Page Content */}
-      {/* Add Event Modal */}
-      <div id="add_Event" className="modal custom-modal fade" role="dialog">
-        <div className="modal-dialog modal-dialog-centered" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Add Event</h5>
-              <button type="button" className="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">×</span>
-              </button>
-            </div>
-            <div className="modal-body">
-              <form>
-                <div className="form-group">
-                  <label>
-                    Event Type <span className="text-danger">*</span>
-                  </label>
-                  <select className="select">
-                    <option>Select Event Type</option>
-                    <option>Casual Event 12 Days</option>
-                    <option>Medical Event</option>
-                    <option>Loss of Pay</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>
-                    From <span className="text-danger">*</span>
-                  </label>
-                  <div className="cal-icon">
-                    <input className="form-control datetimepicker" type="text" />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>
-                    To <span className="text-danger">*</span>
-                  </label>
-                  <div className="cal-icon">
-                    <input className="form-control datetimepicker" type="text" />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>
-                    Number of days <span className="text-danger">*</span>
-                  </label>
-                  <input className="form-control" readOnly={false} type="text" />
-                </div>
-                <div className="form-group">
-                  <label>
-                    Remaining Events <span className="text-danger">*</span>
-                  </label>
-                  <input className="form-control" readOnly={false} defaultValue={12} type="text" />
-                </div>
-                <div className="form-group">
-                  <label>
-                    Event Reason <span className="text-danger">*</span>
-                  </label>
-                  <textarea rows={4} className="form-control" defaultValue={''} />
-                </div>
-                <div className="submit-section">
-                  <button className="btn btn-primary submit-btn">Submit</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* /Add Event Modal */}
-      {/* Edit Event Modal */}
-      <div id="edit_Event" className="modal custom-modal fade" role="dialog">
-        <div className="modal-dialog modal-dialog-centered" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Edit Event</h5>
-              <button type="button" className="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">×</span>
-              </button>
-            </div>
-            <div className="modal-body">
-              <form>
-                <div className="form-group">
-                  <label>
-                    Event Type <span className="text-danger">*</span>
-                  </label>
-                  <select className="select">
-                    <option>Select Event Type</option>
-                    <option>Casual Event 12 Days</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>
-                    From <span className="text-danger">*</span>
-                  </label>
-                  <div className="cal-icon">
-                    <input className="form-control datetimepicker" defaultValue="01-01-2019" type="text" />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>
-                    To <span className="text-danger">*</span>
-                  </label>
-                  <div className="cal-icon">
-                    <input className="form-control datetimepicker" defaultValue="01-01-2019" type="text" />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>
-                    Number of days <span className="text-danger">*</span>
-                  </label>
-                  <input className="form-control" readOnly={false} type="text" defaultValue={2} />
-                </div>
-                <div className="form-group">
-                  <label>
-                    Remaining Events <span className="text-danger">*</span>
-                  </label>
-                  <input className="form-control" readOnly={false} defaultValue={12} type="text" />
-                </div>
-                <div className="form-group">
-                  <label>
-                    Event Reason <span className="text-danger">*</span>
-                  </label>
-                  <textarea rows={4} className="form-control" defaultValue={'Going to hospital'} />
-                </div>
-                <div className="submit-section">
-                  <button className="btn btn-primary submit-btn">Save</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* /Edit Event Modal */}
-      {/* Delete Event Modal */}
-      <div className="modal custom-modal fade" id="delete_approve" role="dialog">
-        <div className="modal-dialog modal-dialog-centered">
-          <div className="modal-content">
-            <div className="modal-body">
-              <div className="form-header">
-                <h3>Delete Event</h3>
-                <p>Are you sure want to Cancel this Event?</p>
+
+      {/* View Event Modal */}
+      {isModalOpen && (
+        <div id="view_Event" className="modal custom-modal fade" role="dialog">
+          <div className="modal-dialog modal-dialog-centered" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Event</h5>
+                <button type="button" className="close" data-dismiss="modal" aria-label="Close" onClick={handleCloseModal}>
+                  <span aria-hidden="true">×</span>
+                </button>
               </div>
-              <div className="modal-btn delete-action">
-                <div className="row">
-                  <div className="col-6">
-                    <a className="btn btn-primary continue-btn">Delete</a>
+              <div className="modal-body">
+                <form onSubmit={handleEditData}>
+                  <div className="form-group">
+                    <label>Event Name</label>
+                    <input
+                      className="form-control"
+                      readOnly={true}
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      type="text"
+                    />
                   </div>
-                  <div className="col-6">
-                    <a data-dismiss="modal" className="btn btn-primary cancel-btn">
-                      Cancel
-                    </a>
+                  <div className="form-group">
+                    <label>Event Location</label>
+                    <input
+                      className="form-control"
+                      readOnly={true}
+                      name="location"
+                      value={formData.location}
+                      onChange={handleInputChange}
+                      type="text"
+                    />
                   </div>
-                </div>
+                  {isEventDateVisible && Array.isArray(formData.date) && formData.date.length > 0 && (
+                    <div className="form-group">
+                      <label>
+                        Event Date <span className="text-danger">*</span>
+                      </label>
+                      <select className="form-control" name="date" onChange={handleInputChange}>
+                        <option>Select Event Date</option>
+                        {formData.date.map((date: any, index: any) => (
+                          <option value={date} key={index}>
+                            {date}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {isEventReasonVisible && (
+                    <div className="form-group">
+                      <label>
+                        Event Reason <span className="text-danger">*</span>
+                      </label>
+                      <textarea
+                        rows={4}
+                        className="form-control"
+                        name="remark"
+                        value={formData.remark}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  )}
+                  <div className="submit-section">
+                    {!isEventDateVisible && !isEventReasonVisible && (
+                      <>
+                        <button className="btn btn-primary submit-btn" onClick={handleAccept}>
+                          Accept
+                        </button>
+                        <button className="btn btn-primary submit-btn" onClick={handleReject}>
+                          Reject
+                        </button>
+                      </>
+                    )}
+                    {isEventDateVisible || isEventReasonVisible ? (
+                      <button className="btn btn-primary submit-btn">Save</button>
+                    ) : null}
+                  </div>
+                </form>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      {/* /Delete Event Modal */}
+      )}
+      {/* View Event Modal */}
     </>
   )
 }

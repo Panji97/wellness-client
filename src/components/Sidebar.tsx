@@ -28,8 +28,8 @@ const Sidebar = () => {
         <div id="sidebar-menu" className="sidebar-menu">
           <ul>
             {userData.menus ? (
-              userData.menus.map((header: any) => (
-                <li className={`submenu ${activeMenu === 'dashboard' ? 'active' : ''}`}>
+              userData.menus.map((header: any, index: any) => (
+                <li className={`submenu ${activeMenu === 'dashboard' ? 'active' : ''}`} key={index}>
                   <a href="#" onClick={() => toggleMenu('dashboard')}>
                     <i className={header.icon} /> <span> {header.name}</span> <span className="menu-arrow" />
                   </a>
@@ -38,8 +38,8 @@ const Sidebar = () => {
                       display: activeMenu === 'dashboard' ? 'block' : 'none'
                     }}
                   >
-                    {header.child.map((children: any) => (
-                      <li>
+                    {header.child.map((children: any, index: any) => (
+                      <li key={index}>
                         <NavLink to={children.link} style={{ textDecoration: 'none', color: 'white' }}>
                           Admin {children.name}
                         </NavLink>

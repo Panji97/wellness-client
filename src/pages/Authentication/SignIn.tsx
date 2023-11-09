@@ -68,11 +68,6 @@ const SignIn = () => {
                     <div className="col">
                       <label>Password</label>
                     </div>
-                    <div className="col-auto">
-                      <a className="text-muted" href="forgot-password.html">
-                        Forgot password?
-                      </a>
-                    </div>
                   </div>
                   <input
                     className="form-control"

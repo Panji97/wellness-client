@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import universalCookie from 'universal-cookie'
 
@@ -21,12 +21,14 @@ const Header = () => {
     dispatch(setUser(response.result))
   }
 
-  const handleLogout = async () => {
+  const handleLogout = async (e: React.FormEvent) => {
+    e.preventDefault()
     cookie.remove('accessToken')
 
     toast.success('success logout')
 
     navigate('/')
+    window.location.reload()
   }
 
   useEffect(() => {

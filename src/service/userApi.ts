@@ -18,3 +18,17 @@ export const userLogin = async () => {
     return error
   }
 }
+
+export const allUser = async () => {
+  try {
+    const response = await axios.get(`${base_url}/user/v1/showAll`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    })
+
+    return response.data
+  } catch (error) {
+    return error
+  }
+}
